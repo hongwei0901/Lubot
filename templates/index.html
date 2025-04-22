@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUbot 模拟</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%; /* Ensure body takes full width */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f7f7f8;
+            display: flex;
+            overflow: hidden; /* Prevent potential body scrollbars */
+        }
+        .sidebar {
+            width: 260px;
+            background-color: #fff;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            height: 100%;
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+        .sidebar-logo {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .new-chat-button {
+            display: flex;
+            align-items: center;
+            background-color: #f0f4f9;
+            color: #333;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            justify-content: center;
+        }
+        .new-chat-button:hover {
+            background-color: #e8edf3;
+        }
+        .chat-list {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .chat-item {
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex; /* Use flex to align title and button */
+            justify-content: space-between; /* Push button to the right */
+            align-items: center;
+            position: relative; /* Needed for absolute positioning if used */
+            overflow: hidden; /* Hide overflowing text */
+            white-space: nowrap;
+        }
+        .chat-item .chat-title {
+             flex-grow: 1;
+             overflow: hidden;
+             text-overflow: ellipsis; /* Add ellipsis for long titles */
+             white-space: nowrap; /* Ensure text stays on one line */
+             margin-right: 5px; /* Space between title and button */
+             max-width: 150px; /* Fixed max width (adjust as needed) */
+        }
+        .chat-item .delete-chat-button {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1.1em;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+            display: none; /* Hide by default */
+            flex-shrink: 0; /* Prevent button from shrinking */
+        }
+        .chat-item:hover .delete-chat-button {
+            display: inline-block; /* Show on hover */
+        }
+        .delete-chat-button:hover {
+            color: #f00; /* Red on hover */
+        }
+        .chat-item:hover, .chat-item.active {
+            background-color: #f0f4f9;
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 10px;
+        }
+        .download-app-button {
+             display: flex;
+            align-items: center;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            width: 100%;
+            margin-top: 10px;
+            box-sizing: border-box;
+            justify-content: center;
+        }
+        .download-app-button .new-badge {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+        .download-app-button:hover {
+            background-color: #f8f9fa;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            /* max-width: 900px; */ /* Removed */
+            /* margin: 0 auto; */   /* Removed */
+            /* width: 100%; */ /* Removed redundant width */
+            box-sizing: border-box;
+        }
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 1.1em;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between; /* Keep space-between for potential future elements */
+            align-items: center;
+            min-height: 24px; /* Ensure header has some height even if title is short */
+        }
+        #chat-header-title {
+             flex-grow: 1; /* Allow title to take available space */
+             text-align: center; /* Center the title */
+             overflow: hidden;
+             white-space: nowrap;
+             text-overflow: ellipsis;
+        }
+         .test-chat-button {
+            background-color: #f0f4f9;
+            color: #333;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f7f7f8;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            max-width: 80%;
+        }
+        .message-content {
+            padding: 10px 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        .user-message {
+            margin-left: auto;
+            justify-content: flex-end;
+        }
+        .user-message .message-content {
+            background-color: #e3f2fd;
+        }
+        .bot-message {
+            margin-right: auto;
+        }
+        .bot-message .message-content {
+             background-color: #ffffff;
+             border: 1px solid #e5e5e5;
+             padding: 0; /* Ensure no padding on the container itself */
+        }
+        .bot-message .message-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 5px 12px; /* Padding for header */
+            border-bottom: 1px solid #f0f0f0; /* Optional separator */
+            margin-bottom: 5px; /* Space below header */
+        }
+        .bot-message .bot-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .bot-message .bot-model-name {
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .bot-message .message-body {
+            padding: 5px 12px 10px 12px; /* Padding for body */
+            line-height: 1.6;
+        }
+        .bot-message .message-content ul { /* Example styling for list in bot message */
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+         .bot-message .message-content li {
+             margin-bottom: 3px;
+         }
+        .input-container {
+            padding: 15px 20px;
+            border-top: 1px solid #e5e5e5;
+            background-color: #fff; /* Background for input area */
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin-top: auto; /* Push input to bottom */
+        }
+        .input-area-wrapper {
+            display: flex;
+            align-items: flex-end;
+            width: 100%;
+        }
+        #message-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            margin-right: 10px;
+            font-size: 1em;
+            resize: none;
+            height: auto;
+            min-height: 24px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .input-buttons-right {
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             margin-left: 5px;
+        }
+         .attachment-button,
+         .send-button {
+             padding: 8px;
+             background-color: transparent;
+             color: #666;
+             border: none;
+             border-radius: 8px;
+             cursor: pointer;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             transition: background-color 0.2s;
+         }
+          .attachment-button svg,
+          .send-button svg {
+             width: 20px;
+             height: 20px;
+             fill: currentColor;
+         }
+
+        .send-button {
+            background-color: #4a90e2;
+            color: white;
+            padding: 8px 12px;
+        }
+        .send-button:hover {
+            background-color: #357abd;
+        }
+         .attachment-button:hover {
+             background-color: #f0f0f0;
+         }
+
+        .input-options-bottom {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            padding-left: 5px;
+        }
+        .option-button {
+            padding: 5px 10px;
+            background-color: #f0f4f9;
+            color: #555;
+            border: 1px solid #dcdcdc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .option-button:hover {
+            background-color: #e8edf3;
+        }
+        .option-button svg {
+             width: 14px;
+             height: 14px;
+             fill: currentColor;
+        }
+
+        .sidebar-content {
+             padding: 0 10px;
+         }
+
+        .main-content.is-empty .chat-header {
+            display: none;
+        }
+
+        .chat-messages.is-empty-display {
+            justify-content: center; /* Center vertically */
+            align-items: center; /* Center horizontally */
+            overflow: hidden; /* Prevent scrollbars when centered */
+        }
+
+         .initial-chat-content {
+             text-align: center;
+             color: #666;
+             width: 100%;
+             padding: 20px;
+             box-sizing: border-box;
+         }
+
+         .initial-chat-content .icon {
+              /* Placeholder for icon styling */
+              font-size: 3em; /* Example size */
+              margin-bottom: 20px;
+              color: #4a90e2; /* Example color */
+          }
+           .initial-chat-content .welcome-title {
+               font-size: 1.8em;
+               font-weight: 500;
+               color: #333;
+               margin-bottom: 10px;
+           }
+            .initial-chat-content .welcome-subtitle {
+                font-size: 1em;
+                color: #555;
+            }
+
+         /* Override message styles when empty */
+         .chat-messages.is-empty-display .message {
+             display: none; /* Hide any accidental message divs */
+         }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-logo">LUbot</span>
+            <!-- Add logo icon if available -->
+        </div>
+         <div class="sidebar-content">
+            <button class="new-chat-button" id="new-chat-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                开启新对话
+            </button>
+            <div class="chat-list" id="chat-list">
+                <!-- Chat history will be loaded here -->
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="download-app-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 10.5L12 15L7.5 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 3V14.25" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                 下载 App
+                <span class="new-badge">NEW</span>
+            </button>
+             <!-- Add personal info section if needed -->
+        </div>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <div class="chat-header">
+             <span id="chat-header-title">新对话</span> <!-- Title element with ID -->
+            <!-- Removed test chat button -->
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Initial state will be set by JS -->
+        </div>
+        <div class="input-container">
+            <div class="input-area-wrapper">
+                <textarea id="message-input" placeholder="给 LUbot 发送消息" rows="1"></textarea>
+                <div class="input-buttons-right">
+                     <button class="attachment-button" title="上传附件">
+                         <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M761.6 294.4a32 32 0 0 1 44.8 0l108.8 108.8a32 32 0 0 1-44.8 44.8L761.6 340.8a32 32 0 0 1 0-46.4z m-294.4 0a32 32 0 0 1 44.8 0l108.8 108.8a32 32 0 0 1-44.8 44.8L467.2 340.8a32 32 0 0 1 0-46.4z m588.8 364.8c-19.2-19.2-44.8-25.6-64-25.6s-44.8 6.4-64 25.6L534.4 825.6c-38.4 38.4-108.8 38.4-147.2 0L224 662.4a32 32 0 1 1 44.8-44.8l163.2 163.2c12.8 12.8 32 12.8 44.8 0L864 403.2a96 96 0 1 0-134.4-134.4L336 662.4c-38.4 38.4-38.4 108.8 0 147.2s108.8 38.4 147.2 0l384-384a153.6 153.6 0 0 0 0-224c-57.6-57.6-153.6-57.6-217.6 0L262.4 595.2c-12.8 12.8-12.8 32 0 44.8s32 12.8 44.8 0l384-384Z"></path></svg>
+                     </button>
+                    <button class="send-button" id="send-button" onclick="sendMessage()" title="发送">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </button>
+                </div>
+            </div>
+             <div class="input-options-bottom">
+                <button class="option-button">
+                    <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M512 85.333333a426.666667 426.666667 0 1 0 0 853.333334 426.666667 426.666667 0 0 0 0-853.333334zm0 64a362.666667 362.666667 0 1 1 0 725.333334A362.666667 362.666667 0 0 1 512 149.333333zm0 149.333334a42.666667 42.666667 0 0 0-42.666667 42.666666v170.666667a42.666667 42.666667 0 1 0 85.333334 0V341.333333a42.666667 42.666667 0 0 0-42.666667-42.666666zm0 341.333333a42.666667 42.666667 0 1 0 0 85.333334 42.666667 42.666667 0 0 0 0-85.333334z"/></svg>
+                    联网搜索
+                </button>
+                <button class="option-button">
+                     <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M768 85.333333H256a85.333333 85.333333 0 0 0-85.333333 85.333334v768a85.333333 85.333333 0 0 0 85.333333 85.333334h512a85.333333 85.333333 0 0 0 85.333333-85.333334V170.666667A85.333333 85.333333 0 0 0 768 85.333333zM384 896V128h256v768H384z m469.333333-170.666666H896v-42.666667h-42.666667v42.666667zm0-170.666667H896v-42.666667h-42.666667v42.666667z m0-170.666667H896v-42.666666h-42.666667v42.666666z M128 725.333333h42.666667v42.666667H128v-42.666667z m0-170.666666h42.666667v42.666667H128v-42.666667z m0-170.666667h42.666667v42.666666H128v-42.666666z"/></svg>
+                    切换模型 (R1)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('message-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const newChatButton = document.getElementById('new-chat-btn');
+        const chatListContainer = document.getElementById('chat-list');
+        const mainContent = document.getElementById('main-content');
+        const sendButton = document.getElementById('send-button'); // Get send button
+        const chatHeaderTitle = document.getElementById('chat-header-title'); // Get header title element
+
+        const MAX_HISTORY_ITEMS = 20;
+        let currentChatMessages = [];
+        let chatSessions = [];
+        let currentSessionId = null;
+
+        // --- Updated Initial Chat HTML ---
+        const initialChatHTML = `
+        <div class="initial-chat-content">
+            <div class="icon">🤖</div> <!-- Replace with actual SVG or image if desired -->
+            <div class="welcome-title">我是 LUbot, 很高兴见到你!</div>
+            <div class="welcome-subtitle">我可以帮你写代码、读文件、写各种创意内容，请把你的任务交给我吧~</div>
+        </div>`;
+
+        // --- Thinking Indicator Functions ---
+        function showThinkingIndicator() {
+            const indicatorContainer = document.createElement('div');
+            indicatorContainer.className = 'message bot-message';
+            indicatorContainer.id = 'thinking-indicator'; // Assign ID for removal
+
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'message-content';
+            indicatorDiv.innerHTML = '<span>🤖 正在思考...</span>'; // Simple text indicator
+
+            indicatorContainer.appendChild(indicatorDiv);
+            chatMessages.appendChild(indicatorContainer);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Disable input
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+        }
+
+        function hideThinkingIndicator() {
+            const indicator = document.getElementById('thinking-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+
+            // Enable input
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            messageInput.focus(); // Focus back on input
+        }
+
+        // --- Local Storage Functions ---
+        function loadChatSessions() {
+            const storedSessions = localStorage.getItem('chatSessions_LUbot');
+            if (storedSessions) {
+                chatSessions = JSON.parse(storedSessions);
+                if (chatSessions.length > MAX_HISTORY_ITEMS) {
+                    chatSessions = chatSessions.slice(0, MAX_HISTORY_ITEMS);
+                    saveChatSessions();
+                }
+            } else {
+                chatSessions = [];
+            }
+            if (chatSessions.length > 0) {
+                loadChat(chatSessions[0].id);
+            } else {
+                startNewChatInternal();
+            }
+            renderChatList();
+        }
+
+        function saveChatSessions() {
+             const sessionsToSave = chatSessions.slice(0, MAX_HISTORY_ITEMS);
+            localStorage.setItem('chatSessions_LUbot', JSON.stringify(sessionsToSave));
+        }
+
+        // --- Chat Rendering Functions ---
+        function renderChatList() {
+            chatListContainer.innerHTML = '';
+            chatSessions.forEach((session, index) => { // Add index
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                if (session.id === currentSessionId) {
+                    chatItem.classList.add('active');
+                }
+
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'chat-title';
+                titleSpan.textContent = session.title || '无标题对话';
+                titleSpan.onclick = () => loadChat(session.id);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-chat-button';
+                deleteButton.innerHTML = '×'; // Simple multiplication sign as X
+                deleteButton.title = '删除对话';
+                deleteButton.onclick = (event) => {
+                     event.stopPropagation(); // Prevent triggering loadChat
+                     deleteChat(session.id, index); // Pass index for easier next chat logic
+                };
+
+                chatItem.appendChild(titleSpan);
+                chatItem.appendChild(deleteButton);
+                chatListContainer.appendChild(chatItem);
+            });
+        }
+
+        function clearChatDisplay(setInitial = false) {
+            if (setInitial) {
+                chatHeaderTitle.textContent = '新对话'; // Reset header on new chat display
+                chatMessages.innerHTML = initialChatHTML;
+                 chatMessages.classList.add('is-empty-display');
+                 mainContent.classList.add('is-empty'); // Hide header
+            } else {
+                chatMessages.innerHTML = '';
+                 chatMessages.classList.remove('is-empty-display');
+                 mainContent.classList.remove('is-empty'); // Show header
+            }
+        }
+
+        function displayMessages(messages) {
+             clearChatDisplay(false); // Clear without setting initial message
+             // Ensure addMessage is only visual here
+             messages.forEach(msg => addMessage(msg.text, msg.isUser, false));
+             if (messages.length > 0) {
+                 mainContent.classList.remove('is-empty');
+                 chatMessages.classList.remove('is-empty-display');
+             } else {
+                 clearChatDisplay(true);
+             }
+        }
+
+        // --- Delete Chat Function ---
+        function deleteChat(sessionIdToDelete, indexToDelete) {
+            const sessionIndex = chatSessions.findIndex(s => s.id === sessionIdToDelete);
+            if (sessionIndex === -1) return; // Should not happen if indexToDelete is correct
+
+            chatSessions.splice(sessionIndex, 1);
+            saveChatSessions();
+
+            // If the deleted chat was the active one, load another or start new
+            if (currentSessionId === sessionIdToDelete) {
+                 currentSessionId = null; // Reset current session ID
+                 if (chatSessions.length > 0) {
+                    // Try loading the one before, or the first one if deleting the first
+                    const nextIndex = Math.max(0, sessionIndex - 1);
+                    loadChat(chatSessions[nextIndex].id);
+                } else {
+                    // No chats left, start a new one
+                    startNewChatInternal();
+                }
+            } else {
+                 // If a different chat was deleted, just re-render the list
+                 renderChatList();
+            }
+        }
+
+        // --- Core Chat Logic Functions ---
+         // addMessage: Assumed to ONLY update the DOM visually, not the data source when save=false
+        function addMessage(message, isUser, save = false) {
+             // If this is the first *visual* message being added, remove empty state visually
+             // Check visual state, not data state
+             if (chatMessages.classList.contains('is-empty-display')) {
+                  mainContent.classList.remove('is-empty');
+                  chatMessages.classList.remove('is-empty-display');
+                  chatMessages.innerHTML = ''; // Clear the initial welcome message
+             }
+
+            const messageContainer = document.createElement('div');
+            messageContainer.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-content';
+
+            if (isUser) {
+                 // User message: Keep simple structure
+                 messageDiv.innerHTML = message.replace(/\n/g, '<br>');
+            } else {
+                 // Bot message: Create header and body structure
+                 messageDiv.innerHTML = ''; // Clear potential old content
+
+                 // Create header
+                 const headerDiv = document.createElement('div');
+                 headerDiv.className = 'message-header';
+
+                 const iconSpan = document.createElement('span');
+                 iconSpan.className = 'bot-icon';
+                 iconSpan.textContent = '🤖'; // Bot icon
+
+                 const nameSpan = document.createElement('span');
+                 nameSpan.className = 'bot-model-name';
+                 nameSpan.textContent = 'LUbot'; // Model name (hardcoded for now)
+
+                 headerDiv.appendChild(iconSpan);
+                 headerDiv.appendChild(nameSpan);
+
+                 // Create body
+                 const bodyDiv = document.createElement('div');
+                 bodyDiv.className = 'message-body';
+                 // Process newlines/markdown for the actual message content here
+                 bodyDiv.innerHTML = message.replace(/\n/g, '<br>');
+
+                 // Append header and body to the main message content div
+                 messageDiv.appendChild(headerDiv);
+                 messageDiv.appendChild(bodyDiv);
+            }
+
+            messageContainer.appendChild(messageDiv);
+            chatMessages.appendChild(messageContainer);
+            // Scroll to bottom
+             requestAnimationFrame(() => {
+                 chatMessages.scrollTop = chatMessages.scrollHeight;
+             });
+
+             // IMPORTANT: Removed data update logic from here when save=false
+             // if (save) { currentChatMessages.push({ text: message, isUser: isUser }); }
+        }
+
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText || messageInput.disabled) return;
+
+             // Capture context *before* any async operation
+             const requestSessionId = currentSessionId;
+             const isNewChat = !requestSessionId; // Check if it's a new chat before creating one
+
+            // 1. Add user message visually ONLY
+            addMessage(messageText, true, false);
+            messageInput.value = '';
+            autoResizeTextarea();
+
+            // 2. Show thinking indicator & disable input
+            showThinkingIndicator();
+
+            try {
+                // 3. Call API
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText }),
+                });
+
+                const data = await response.json();
+                const botResponseText = data.error ? ('抱歉，发生错误：' + data.error) : data.response;
+
+                 // --- Data Update ---
+                 let targetSession;
+                 let sessionTitleNeedsUpdate = false;
+                 let newSessionCreated = false; // Flag if a new session was made
+
+                 if (isNewChat) {
+                     // Create a new session object in memory *first*
+                     const newSessionId = Date.now();
+                     const title = messageText.substring(0, 30) || "新对话";
+                     targetSession = {
+                         id: newSessionId,
+                         title: title,
+                         messages: [] // Start with empty messages
+                     };
+                     // Add user message data
+                     targetSession.messages.push({ text: messageText, isUser: true });
+                     // Add bot message data
+                     targetSession.messages.push({ text: botResponseText, isUser: false });
+
+                      // Add to main list and handle limit
+                      chatSessions.unshift(targetSession);
+                      if (chatSessions.length > MAX_HISTORY_ITEMS) {
+                          chatSessions.pop();
+                      }
+                       // If the user hasn't switched away, update the currentSessionId
+                       if (currentSessionId === requestSessionId) { // requestSessionId is null here
+                           currentSessionId = newSessionId;
+                           sessionTitleNeedsUpdate = true; // New session title is ready
+                           newSessionCreated = true;
+                       }
+
+                 } else {
+                     targetSession = chatSessions.find(s => s.id === requestSessionId);
+                     if (targetSession) {
+                         // Add user message data retrospectively
+                         targetSession.messages.push({ text: messageText, isUser: true });
+                         // Add bot message data
+                         targetSession.messages.push({ text: botResponseText, isUser: false });
+
+                          // Check if title needs update (was default, now has user message)
+                          if ((targetSession.title === "新对话" || targetSession.title === "无标题对话") && targetSession.messages.some(m => m.isUser)) {
+                             targetSession.title = targetSession.messages.find(m => m.isUser).text.substring(0, 30);
+                             sessionTitleNeedsUpdate = true;
+                          }
+                     } else {
+                         console.error("Error: Session not found for data update:", requestSessionId);
+                         // Handle error? Maybe just log it.
+                     }
+                 }
+
+                // Save the updated sessions data
+                saveChatSessions();
+
+                // --- UI Update ---
+                if (currentSessionId === requestSessionId || (isNewChat && currentSessionId === targetSession?.id)) {
+                     // Check again if it's still empty visually before adding bot message
+                     if (chatMessages.classList.contains('is-empty-display')) {
+                         mainContent.classList.remove('is-empty');
+                         chatMessages.classList.remove('is-empty-display');
+                         chatMessages.innerHTML = ''; // Clear the initial welcome message
+                         // If it was a new chat, we need to visually add the user msg again now
+                         if (isNewChat) {
+                              addMessage(messageText, true, false);
+                         }
+                     }
+                    addMessage(botResponseText, false, false); // Add bot response visually
+                    // Update header title if it changed for the *current* session
+                    if (sessionTitleNeedsUpdate) {
+                        chatHeaderTitle.textContent = targetSession.title;
+                    }
+                }
+
+                 // Update list render - title might have changed even if not current
+                 renderChatList();
+
+            } catch (error) {
+                 console.error("API Fetch Error:", error);
+                 // Attempt to add error message to the correct session data if possible
+                 const targetSessionOnError = chatSessions.find(s => s.id === requestSessionId);
+                 const errorText = '抱歉，网络或服务器错误：' + error;
+                 if (targetSessionOnError) {
+                     targetSessionOnError.messages.push({ text: messageText, isUser: true }); // Add user msg data
+                     targetSessionOnError.messages.push({ text: errorText, isUser: false }); // Add error msg data
+                     saveChatSessions();
+                 } else if (isNewChat) {
+                      // Handle error for a completely new chat (maybe create session with error)
+                       const errorSessionId = Date.now();
+                       const errorTitle = messageText.substring(0, 30) || "错误对话";
+                       const errorSession = {
+                           id: errorSessionId,
+                           title: errorTitle,
+                           messages: [
+                               { text: messageText, isUser: true },
+                               { text: errorText, isUser: false }
+                           ]
+                       };
+                       chatSessions.unshift(errorSession);
+                       if (chatSessions.length > MAX_HISTORY_ITEMS) chatSessions.pop();
+                       saveChatSessions();
+                       // If user is still looking at the new chat, update currentId
+                       if (currentSessionId === requestSessionId) currentSessionId = errorSessionId;
+                 }
+
+                 // Visually update *only* if user hasn't switched
+                 if (currentSessionId === requestSessionId || (isNewChat && currentSessionId === targetSessionOnError?.id)) {
+                      if (chatMessages.classList.contains('is-empty-display')) {
+                           mainContent.classList.remove('is-empty');
+                           chatMessages.classList.remove('is-empty-display');
+                           chatMessages.innerHTML = '';
+                           if (isNewChat) addMessage(messageText, true, false);
+                      }
+                     addMessage(errorText, false, false);
+                 }
+                 // Update header title if a new error session was created and is current
+                 const errorSessionJustCreated = chatSessions.find(s => s.id === currentSessionId);
+                 if (errorSessionJustCreated && errorSessionJustCreated.title.includes("错误")) {
+                     chatHeaderTitle.textContent = errorSessionJustCreated.title;
+                 }
+                 renderChatList();
+            } finally {
+                 hideThinkingIndicator(); // Always hide indicator and enable input
+            }
+        }
+
+        function startNewChatInternal() {
+            hideThinkingIndicator(); // Ensure indicator is hidden
+            currentSessionId = null;
+            currentChatMessages = []; // This might be redundant now, display logic uses session data
+            clearChatDisplay(true);
+            messageInput.value = '';
+            autoResizeTextarea();
+            renderChatList();
+        }
+
+        function loadChat(sessionId) {
+            hideThinkingIndicator(); // Ensure indicator is hidden
+            // No need to save here anymore
+            const session = chatSessions.find(s => s.id === sessionId);
+            if (session) {
+                currentSessionId = session.id;
+                chatHeaderTitle.textContent = session.title || '无标题对话'; // Update header title
+                // Load messages directly for display
+                displayMessages(session.messages);
+                renderChatList(); // Update active state
+            } else {
+                console.error("Session not found:", sessionId);
+                startNewChatInternal();
+            }
+        }
+
+        function autoResizeTextarea() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+        }
+        messageInput.addEventListener('input', autoResizeTextarea);
+
+        newChatButton.addEventListener('click', startNewChatInternal);
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChatSessions();
+            autoResizeTextarea();
+        });
+
+    </script>
+</body>
+</html> 
