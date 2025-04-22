@@ -35,5 +35,16 @@ ENV/
 Thumbs.db
 
 # Project specific
-*.txt
-!requirements.txt 
+# 排除所有包含 API 密钥的文件
+*api*key*.txt
+*api*key*.env
+*secret*.txt
+*secret*.env
+.env
+.env.local
+
+# 保留必要的 .txt 文件
+!requirements.txt
+!README.txt
+!CHANGELOG.txt
+!LICENSE.txt 
